@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:focus_timer/models/session.dart';
 import 'package:hive/hive.dart';
 
 class TimerProvider extends ChangeNotifier {
@@ -94,6 +95,7 @@ class TimerProvider extends ChangeNotifier {
     if (_isFocusSession) {
       _completedSessions++;
       _box.put("completedSessions", _completedSessions);
+      _saveSession();
     }
 
     _isFocusSession = !_isFocusSession;
@@ -101,7 +103,6 @@ class TimerProvider extends ChangeNotifier {
         ? _focusDuration * 60
         : _breakDuration * 60;
     notifyListeners();
-    //_showCompletionDialog();
   }
 
   void toggleSessionType() {
@@ -117,5 +118,16 @@ class TimerProvider extends ChangeNotifier {
     _timer?.cancel();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _saveSession() {
+    final sessionsBox = Hive.box<Session>("sessionsBox");
+    final session = Session(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      compeletedAt: DateTime.now(),
+      durationMinutes: _isFocusSession ? focusDuration : breakDuration,
+      wasFocusSession: _isFocusSession,
+    );
+    sessionsBox.add(session);
   }
 }

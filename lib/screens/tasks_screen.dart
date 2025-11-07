@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:focus_timer/providers/task_provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -137,7 +138,7 @@ class _TasksScreenState extends State<TasksScreen> {
             if (value.trim().isNotEmpty) {
               taskProvider.addTask(value.trim());
               _controller.clear();
-              Navigator.pop(context);
+              context.pop();
             }
           },
         ),
@@ -145,7 +146,7 @@ class _TasksScreenState extends State<TasksScreen> {
           TextButton(
             onPressed: () {
               _controller.clear();
-              Navigator.pop(context);
+              context.pop();
             },
             child: const Text("Cancel"),
           ),
@@ -154,7 +155,7 @@ class _TasksScreenState extends State<TasksScreen> {
               if (_controller.text.trim().isNotEmpty) {
                 taskProvider.addTask(_controller.text.trim());
                 _controller.clear();
-                Navigator.pop(context);
+                context.pop();
               }
             },
             child: const Text("Add"),

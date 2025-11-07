@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:focus_timer/providers/timer_provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
-  final int focusDuration;
-  final int breakDuration;
-  const SettingsScreen({
-    super.key,
-    required this.focusDuration,
-    required this.breakDuration,
-  });
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late int _focusDuration;
-  late int _breakDuration;
+  late double _focusDuration;
+  late double _breakDuration;
 
   @override
   void initState() {
     super.initState();
-    _focusDuration = widget.focusDuration;
-    _breakDuration = widget.breakDuration;
+    final timerProvider = context.read<TimerProvider>();
+    _focusDuration = timerProvider.focusDuration.toDouble();
+    _breakDuration = timerProvider.breakDuration.toDouble();
   }
 
   @override
@@ -47,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label: "$_focusDuration min",
             onChanged: (value) {
               setState(() {
-                _focusDuration = value.toInt();
+                _focusDuration = value;
               });
             },
           ),
@@ -63,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label: "$_breakDuration min",
             onChanged: (value) {
               setState(() {
-                _breakDuration = value.toInt();
+                _breakDuration = value;
               });
             },
           ),
@@ -72,10 +70,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           FilledButton(
             onPressed: () {
-              Navigator.pop(context, {
-                "focus": _focusDuration,
-                "break": _breakDuration,
-              });
+              final timerProvider = context.read<TimerProvider>();
+              timerProvider.updateDurations(
+                _focusDuration.round(),
+                _breakDuration.round(),
+              );
+              context.pop();
             },
             child: const Text("Save Settings"),
           ),

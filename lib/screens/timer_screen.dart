@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:focus_timer/providers/timer_provider.dart';
-import 'package:focus_timer/screens/settings_screen.dart';
-import 'package:focus_timer/screens/tasks_screen.dart';
+import 'package:focus_timer/router/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class TimerScreen extends StatefulWidget {
@@ -26,30 +26,18 @@ class _TimerScreenState extends State<TimerScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.list),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TasksScreen()),
-              );
-            },
+            onPressed: () => context.push(AppRoutes.tasks),
+            tooltip: "Tasks",
+          ),
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () => context.push(AppRoutes.stats),
+            tooltip: "Statistics",
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SettingsScreen(
-                    focusDuration: timerProvider.focusDuration,
-                    breakDuration: timerProvider.breakDuration,
-                  ),
-                ),
-              );
-
-              if (result != null) {
-                timerProvider.updateDurations(result["focus"], result["break"]);
-              }
-            },
+            onPressed: () => context.push(AppRoutes.settings),
+            tooltip: "Settings",
           ),
           Center(
             child: Padding(
