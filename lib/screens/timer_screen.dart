@@ -55,104 +55,131 @@ class _TimerScreenState extends State<TimerScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Chip(
-              avatar: Icon(
-                size: 25,
-                timerProvider.isFocusSession ? Icons.psychology : Icons.coffee,
-              ),
-              label: Text(
-                timerProvider.isFocusSession ? "Focus Session" : "Break Time",
-                style: theme.textTheme.titleMedium,
-              ),
-              backgroundColor: colorScheme.secondaryContainer,
-            ),
-
-            const SizedBox(height: 48),
-
-            SizedBox(
-              width: 280,
-              height: 280,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 280,
-                    height: 280,
-                    child: CircularProgressIndicator(
-                      value: timerProvider.progress,
-                      strokeWidth: 12,
-                      backgroundColor: colorScheme.surfaceContainerHighest,
-                      color: timerProvider.isFocusSession
-                          ? colorScheme.primary
-                          : colorScheme.tertiary,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: () => _toggleSessionType(),
+                      child: Chip(
+                        avatar: Icon(
+                          size: 25,
+                          timerProvider.isFocusSession
+                              ? Icons.psychology
+                              : Icons.coffee,
+                        ),
+                        label: Text(
+                          timerProvider.isFocusSession
+                              ? "Focus Session"
+                              : "Break Time",
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        backgroundColor: colorScheme.secondaryContainer,
+                      ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 48),
+
+                    SizedBox(
+                      width: 280,
+                      height: 280,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 280,
+                            height: 280,
+                            child: CircularProgressIndicator(
+                              value: timerProvider.progress,
+                              strokeWidth: 12,
+                              backgroundColor:
+                                  colorScheme.surfaceContainerHighest,
+                              color: timerProvider.isFocusSession
+                                  ? colorScheme.primary
+                                  : colorScheme.tertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          timerProvider.formatTime(
+                            timerProvider.remainingSeconds,
+                          ),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          timerProvider.isRunning ? "In Progress" : "Paused",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    //const Spacer(),
+                    const SizedBox(height: 32),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        FilledButton.tonal(
+                          onPressed: timerProvider.resetTimer,
+                          child: const Icon(Icons.refresh),
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        FilledButton.icon(
+                          onPressed: timerProvider.isRunning
+                              ? timerProvider.pauseTimer
+                              : timerProvider.startTimer,
+                          icon: Icon(
+                            timerProvider.isRunning
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                          ),
+                          label: Text(
+                            timerProvider.isRunning ? "Pause" : "Start",
+                          ),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        FilledButton.tonal(
+                          onPressed: _toggleSessionType,
+                          child: const Icon(Icons.swap_horiz),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
-
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  timerProvider.formatTime(timerProvider.remainingSeconds),
-                  style: theme.textTheme.displayLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  timerProvider.isRunning ? "In Progress" : "Paused",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 64),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FilledButton.tonal(
-                  onPressed: timerProvider.resetTimer,
-                  child: const Icon(Icons.refresh),
-                ),
-
-                const SizedBox(width: 16),
-
-                FilledButton.icon(
-                  onPressed: timerProvider.isRunning
-                      ? timerProvider.pauseTimer
-                      : timerProvider.startTimer,
-                  icon: Icon(
-                    timerProvider.isRunning ? Icons.pause : Icons.play_arrow,
-                  ),
-                  label: Text(timerProvider.isRunning ? "Pause" : "Start"),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                FilledButton.tonal(
-                  onPressed: _toggleSessionType,
-                  child: const Icon(Icons.swap_horiz),
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
