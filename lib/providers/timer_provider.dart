@@ -11,7 +11,6 @@ class TimerProvider extends ChangeNotifier {
   int _remainingSeconds = 25 * 60;
   bool _isRunning = false;
   bool _isFocusSession = true;
-  int _completedSessions = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Box _box = Hive.box("timerBox");
 
@@ -21,7 +20,6 @@ class TimerProvider extends ChangeNotifier {
   int get remainingSeconds => _remainingSeconds;
   bool get isRunning => _isRunning;
   bool get isFocusSession => _isFocusSession;
-  int get completedSessions => _completedSessions;
   int get focusDuration => _focusDuration;
   int get breakDuration => _breakDuration;
 
@@ -37,7 +35,6 @@ class TimerProvider extends ChangeNotifier {
   TimerProvider() {
     _focusDuration = _box.get("focusDuration", defaultValue: 25);
     _breakDuration = _box.get("breakDuration", defaultValue: 5);
-    _completedSessions = _box.get("completedSessions", defaultValue: 0);
     _remainingSeconds = _focusDuration * 60;
   }
 
@@ -91,12 +88,7 @@ class TimerProvider extends ChangeNotifier {
 
     _timer?.cancel();
     _isRunning = false;
-
-    if (_isFocusSession) {
-      _completedSessions++;
-      _box.put("completedSessions", _completedSessions);
-      _saveSession();
-    }
+    _saveSession();
 
     _isFocusSession = !_isFocusSession;
     _remainingSeconds = _isFocusSession

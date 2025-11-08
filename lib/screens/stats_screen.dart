@@ -29,7 +29,7 @@ class StatsScreen extends StatelessWidget {
                 _buildStatsCards(statsProvider),
                 const SizedBox(height: 16),
 
-                if (statsProvider.todayFocusSessions > 0)
+                if (statsProvider.allSessions.isNotEmpty)
                   ElevatedButton.icon(
                     onPressed: () => context.push(AppRoutes.sessionHistory),
                     label: const Text("View All Sessions"),

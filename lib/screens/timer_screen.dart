@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:focus_timer/providers/stats_provider.dart';
 import 'package:focus_timer/providers/timer_provider.dart';
 import 'package:focus_timer/router/app_routes.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,7 @@ class _TimerScreenState extends State<TimerScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final timerProvider = Provider.of<TimerProvider>(context);
+    final statsProvider = Provider.of<StatsProvider>(context);
     timerProvider.onTimerComplete = _showCompletionDialog;
 
     return Scaffold(
@@ -42,9 +44,12 @@ class _TimerScreenState extends State<TimerScreen> {
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: Badge(
-                label: Text("${timerProvider.completedSessions}"),
-                child: const Icon(Icons.check_circle_outline),
+              child: InkWell(
+                onTap: () => _showCounterModeDialog(context, statsProvider),
+                child: Badge(
+                  label: Text("${statsProvider.displayCount}"),
+                  child: const Icon(Icons.check_circle_outline),
+                ),
               ),
             ),
           ),
@@ -145,6 +150,49 @@ class _TimerScreenState extends State<TimerScreen> {
                   child: const Icon(Icons.swap_horiz),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCounterModeDialog(
+    BuildContext context,
+    StatsProvider statsProvider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Counter Display"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioGroup<CounterMode>(
+              groupValue: statsProvider.counterMode,
+              onChanged: (mode) {
+                if (mode != null) {
+                  statsProvider.setCounterMode(mode);
+                  Navigator.pop(context);
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile(
+                    title: const Text("All Time"),
+                    value: CounterMode.allTime,
+                  ),
+                  RadioListTile(
+                    title: const Text("Today"),
+                    value: CounterMode.daily,
+                  ),
+                  RadioListTile(
+                    title: const Text("This Week"),
+                    value: CounterMode.weekly,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

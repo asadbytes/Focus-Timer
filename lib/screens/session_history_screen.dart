@@ -184,81 +184,86 @@ class SessionHistoryScreen extends StatelessWidget {
     final dateFormat = DateFormat("MMM dd, yyyy");
     final timeFormat = DateFormat("hh:mm a");
 
-    return Dismissible(
-      key: Key(session.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      confirmDismiss: (direction) async {
-        return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Delete Session"),
-            content: const Text(
-              "Are you sure you want to delete this session?",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text("Cancel"),
+    return Card(
+      color: Colors.red,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Dismissible(
+        key: Key(session.id),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          color: Colors.red,
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
+        confirmDismiss: (direction) async {
+          return await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Delete Session"),
+              content: const Text(
+                "Are you sure you want to delete this session?",
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  "Delete",
-                  style: TextStyle(color: Colors.red),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-      onDismissed: (direction) {
-        statsProvider.deleteSession(session);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Session deleted"),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: session.wasFocusSession
-                ? Colors.deepPurple
-                : Colors.green,
-            child: Icon(
-              session.wasFocusSession ? Icons.work : Icons.coffee,
-              color: Colors.white,
-              size: 20,
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text(
+                    "Delete",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
             ),
-          ),
-          title: Text(
-            session.wasFocusSession ? "Focus Session" : "Break Session",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text("${session.durationMinutes} minutes"),
-              const SizedBox(height: 2),
-              Text(
-                "${dateFormat.format(session.compeletedAt)} at ${timeFormat.format(session.compeletedAt)}",
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          );
+        },
+        onDismissed: (direction) {
+          statsProvider.deleteSession(session);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Session deleted"),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+        child: Card(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: session.wasFocusSession
+                  ? Colors.deepPurple
+                  : Colors.green,
+              child: Icon(
+                session.wasFocusSession ? Icons.work : Icons.coffee,
+                color: Colors.white,
+                size: 20,
               ),
-            ],
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            onPressed: () =>
-                _showDeleteConfirmation(context, session, statsProvider),
+            ),
+            title: Text(
+              session.wasFocusSession ? "Focus Session" : "Break Session",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text("${session.durationMinutes} minutes"),
+                const SizedBox(height: 2),
+                Text(
+                  "${dateFormat.format(session.compeletedAt)} at ${timeFormat.format(session.compeletedAt)}",
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () =>
+                  _showDeleteConfirmation(context, session, statsProvider),
+            ),
           ),
         ),
       ),

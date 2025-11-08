@@ -2,9 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:focus_timer/models/session.dart';
 import 'package:hive/hive.dart';
 
+enum CounterMode { allTime, daily, weekly }
+
 class StatsProvider extends ChangeNotifier {
+  CounterMode _counterMode = CounterMode.allTime;
+
+  StatsProvider() {
+    _loadCounterMode();
+  }
+
+  CounterMode get counterMode => _counterMode;
+
   List<Session> get allSessions {
     final box = Hive.box<Session>("sessionsBox");
+
     return box.values.toList()
       ..sort((a, b) => b.compeletedAt.compareTo(a.compeletedAt));
   }
@@ -38,6 +49,19 @@ class StatsProvider extends ChangeNotifier {
     }).toList();
   }
 
+  void _loadCounterMode() {
+    final settingsBox = Hive.box("settingsBox");
+    final saved = settingsBox.get("counterMode", defaultValue: 0);
+    _counterMode = CounterMode.values[saved];
+  }
+
+  void setCounterMode(CounterMode mode) {
+    final settingsBox = Hive.box("settingsBox");
+    _counterMode = mode;
+    settingsBox.put("counterMode", mode.index);
+    notifyListeners();
+  }
+
   int get totalFocusSessions {
     return allSessions.where((s) => s.wasFocusSession).length;
   }
@@ -45,6 +69,17 @@ class StatsProvider extends ChangeNotifier {
   int get todayFocusSessions => todaySessions.length;
 
   int get thisWeekFocusSessions => thisWeekSessions.length;
+
+  int get displayCount {
+    switch (_counterMode) {
+      case CounterMode.daily:
+        return todayFocusSessions;
+      case CounterMode.weekly:
+        return thisWeekFocusSessions;
+      case CounterMode.allTime:
+        return totalFocusSessions;
+    }
+  }
 
   Map<DateTime, int> get last7DaysData {
     final now = DateTime.now();
