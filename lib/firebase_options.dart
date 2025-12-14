@@ -61,9 +61,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBdCZ45jr3tHx4PdGFT0i8xy-ogJec6gH0',
-    appId: '1:785947835813:android:9defe375e89cc92af87c4c',
+    appId: '1:785947835813:android:dd3d95eed1b73a39f87c4c',
     messagingSenderId: '785947835813',
     projectId: 'focus-timer-43252',
     storageBucket: 'focus-timer-43252.firebasestorage.app',
   );
+
 }

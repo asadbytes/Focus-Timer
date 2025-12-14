@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:785947835813:android:9defe375e89cc92af87c4c",
+        "mobilesdk_app_id": "1:785947835813:android:dd3d95eed1b73a39f87c4c",
         "android_client_info": {
-          "package_name": "com.example.focus_timer"
+          "package_name": "com.asadbyte.focus_timer"
         }
       },
       "oauth_client": [
