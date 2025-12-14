@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:focus_timer/models/task.dart';
+import 'package:focus_timer/services/firestore_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class TaskProvider extends ChangeNotifier {
-  final Box<Task> _box = Hive.box<Task>("tasksBox");
+  final Box<Task> _taskBox = Hive.box<Task>("tasksBox");
+  final FirestoreService _firestoreService;
 
-  List<Task> get tasks => _box.values.toList();
+  TaskProvider(this._firestoreService);
+
+  List<Task> get tasks => _taskBox.values.toList();
   List<Task> get activeTasks => tasks.where((t) => !t.isCompleted).toList();
   List<Task> get completedTasks => tasks.where((t) => t.isCompleted).toList();
 
@@ -16,21 +20,24 @@ class TaskProvider extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
 
-    _box.put(task.id, task);
+    _taskBox.put(task.id, task);
     notifyListeners();
+    _firestoreService.uploadTask(task);
   }
 
   void toggleTask(String id) {
-    final task = _box.get(id);
+    final task = _taskBox.get(id);
     if (task != null) {
       task.isCompleted = !task.isCompleted;
-      _box.put(id, task);
+      _taskBox.put(id, task);
       notifyListeners();
+      _firestoreService.updateTask(task);
     }
   }
 
   void deleteTask(String id) {
-    _box.delete(id);
+    _taskBox.delete(id);
     notifyListeners();
+    _firestoreService.deleteTask(id);
   }
 }

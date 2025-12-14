@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:focus_timer/models/session.dart';
+import 'package:focus_timer/services/firestore_service.dart';
 import 'package:hive/hive.dart';
 
 enum CounterMode { allTime, daily, weekly }
 
 class StatsProvider extends ChangeNotifier {
+  late final Box<Session> _sessionsBox;
+  final FirestoreService _firestoreService;
+  late final Box _settingsBox;
   CounterMode _counterMode = CounterMode.allTime;
 
-  StatsProvider() {
+  StatsProvider(this._firestoreService) {
+    _sessionsBox = Hive.box<Session>("sessionsBox");
+    _settingsBox = Hive.box("settingsBox");
     _loadCounterMode();
   }
 
   CounterMode get counterMode => _counterMode;
+  FirestoreService get firestoreService => _firestoreService;
 
   List<Session> get allSessions {
-    final box = Hive.box<Session>("sessionsBox");
-
-    return box.values.toList()
+    return _sessionsBox.values.toList()
       ..sort((a, b) => b.compeletedAt.compareTo(a.compeletedAt));
   }
 
@@ -50,15 +55,13 @@ class StatsProvider extends ChangeNotifier {
   }
 
   void _loadCounterMode() {
-    final settingsBox = Hive.box("settingsBox");
-    final saved = settingsBox.get("counterMode", defaultValue: 0);
+    final saved = _settingsBox.get("counterMode", defaultValue: 0);
     _counterMode = CounterMode.values[saved];
   }
 
   void setCounterMode(CounterMode mode) {
-    final settingsBox = Hive.box("settingsBox");
     _counterMode = mode;
-    settingsBox.put("counterMode", mode.index);
+    _settingsBox.put("counterMode", mode.index);
     notifyListeners();
   }
 
@@ -111,30 +114,35 @@ class StatsProvider extends ChangeNotifier {
   void deleteSession(Session session) {
     session.delete();
     notifyListeners();
+    _firestoreService.deleteSession(session.id);
   }
 
   Future<void> deleteAllSessions() async {
-    final box = Hive.box<Session>("sessionsBox");
-    await box.clear();
+    final sessionsBox = Hive.box<Session>("sessionsBox");
+    await sessionsBox.clear();
     notifyListeners();
+    final allIds = allSessions.map((s) => s.id).toList();
+    _firestoreService.deleteBulkSessions(allIds);
   }
 
   Future<void> deleteOldSessions(int daysOld) async {
     final cutoffDate = DateTime.now().subtract(Duration(days: daysOld));
-    final box = Hive.box<Session>("sessionsBox");
+    final sessionsBox = Hive.box<Session>("sessionsBox");
 
     final keysToDelete = <dynamic>[];
-    for (var i = 0; i < box.length; i++) {
-      final session = box.getAt(i);
+    final idsToDelete = <String>[];
+    for (var i = 0; i < sessionsBox.length; i++) {
+      final session = sessionsBox.getAt(i);
       if (session != null && session.compeletedAt.isBefore(cutoffDate)) {
         keysToDelete.add(session.key);
+        idsToDelete.add(session.id);
       }
     }
 
     for (var key in keysToDelete) {
-      await box.delete(key);
+      await sessionsBox.delete(key);
     }
-
     notifyListeners();
+    _firestoreService.deleteBulkSessions(idsToDelete);
   }
 }

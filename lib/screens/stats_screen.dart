@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:focus_timer/providers/stats_provider.dart';
 import 'package:focus_timer/router/app_routes.dart';
+import 'package:focus_timer/services/firestore_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,10 @@ class StatsScreen extends StatelessWidget {
       ),
       body: Consumer<StatsProvider>(
         builder: (context, statsProvider, child) {
+          final pendingCount =
+              statsProvider.firestoreService.pendingOperationsCount;
+          final isSyncing = statsProvider.firestoreService.isSyncing;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -28,6 +33,81 @@ class StatsScreen extends StatelessWidget {
               children: [
                 _buildStatsCards(statsProvider),
                 const SizedBox(height: 16),
+
+                Consumer<FirestoreService>(
+                  builder: (context, firestoreService, _) {
+                    final pendingCount =
+                        firestoreService.pendingOperationsCount;
+                    final isSyncing = firestoreService.isSyncing;
+
+                    // ✅ Hide only when queue is empty AND not currently syncing
+                    if (pendingCount == 0 && !isSyncing) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: isSyncing
+                                  ? null
+                                  : () async {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Syncing...'),
+                                          duration: Duration(seconds: 1),
+                                        ),
+                                      );
+
+                                      await firestoreService.forceSyncNow();
+
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              firestoreService
+                                                          .pendingOperationsCount ==
+                                                      0
+                                                  ? 'Sync complete! ✅'
+                                                  : 'Some operations still pending...',
+                                            ),
+                                            duration: const Duration(
+                                              seconds: 2,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: Icon(
+                                isSyncing ? Icons.sync : Icons.cloud_upload,
+                              ),
+                              label: Text(
+                                isSyncing
+                                    ? 'Syncing... ($pendingCount left)'
+                                    : 'Sync $pendingCount pending',
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isSyncing
+                                    ? Colors.grey
+                                    : Colors.deepPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
 
                 if (statsProvider.allSessions.isNotEmpty)
                   ElevatedButton.icon(

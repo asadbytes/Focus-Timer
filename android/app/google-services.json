@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "785947835813",
+    "project_id": "focus-timer-43252",
+    "storage_bucket": "focus-timer-43252.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785947835813:android:9defe375e89cc92af87c4c",
+        "android_client_info": {
+          "package_name": "com.example.focus_timer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "785947835813-87tl5rsjtpuc08fp8eetpgbccifovlub.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdCZ45jr3tHx4PdGFT0i8xy-ogJec6gH0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "785947835813-87tl5rsjtpuc08fp8eetpgbccifovlub.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:focus_timer/models/session.dart';
+import 'package:focus_timer/services/firestore_service.dart';
 import 'package:hive/hive.dart';
 
 class TimerProvider extends ChangeNotifier {
@@ -12,7 +13,9 @@ class TimerProvider extends ChangeNotifier {
   bool _isRunning = false;
   bool _isFocusSession = true;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final Box _box = Hive.box("timerBox");
+  final Box _timerBox = Hive.box("timerBox");
+  final Box<Session> _sessionsBox = Hive.box<Session>("sessionsBox");
+  final FirestoreService _firestoreService;
 
   int _focusDuration = 25;
   int _breakDuration = 5;
@@ -32,9 +35,9 @@ class TimerProvider extends ChangeNotifier {
     return 1.0 - (_remainingSeconds / totalSeconds);
   }
 
-  TimerProvider() {
-    _focusDuration = _box.get("focusDuration", defaultValue: 25);
-    _breakDuration = _box.get("breakDuration", defaultValue: 5);
+  TimerProvider(this._firestoreService) {
+    _focusDuration = _timerBox.get("focusDuration", defaultValue: 25);
+    _breakDuration = _timerBox.get("breakDuration", defaultValue: 5);
     _remainingSeconds = _focusDuration * 60;
   }
 
@@ -76,19 +79,33 @@ class TimerProvider extends ChangeNotifier {
   void updateDurations(int focus, int breakTime) {
     _focusDuration = focus;
     _breakDuration = breakTime;
-    _box.put("focusDuration", focus);
-    _box.put("breakDuration", breakTime);
+    _timerBox.put("focusDuration", focus);
+    _timerBox.put("breakDuration", breakTime);
     resetTimer();
   }
 
-  void _onTimerComplete() {
+  // ✅ To:
+  Future<void> _onTimerComplete() async {
     HapticFeedback.heavyImpact();
     _audioPlayer.play(AssetSource("sounds/comp_sound.mp3"));
     onTimerComplete?.call();
 
     _timer?.cancel();
     _isRunning = false;
-    _saveSession();
+
+    final session = Session(
+      id: DateTime.now().millisecondsSinceEpoch
+          .toString(), // ✅ Changed from microseconds
+      compeletedAt: DateTime.now(),
+      durationMinutes: _isFocusSession ? focusDuration : breakDuration,
+      wasFocusSession: _isFocusSession,
+    );
+
+    await _saveSession(session); // ✅ Add await
+    await _firestoreService.uploadSession(session); // ✅ Add await
+    print(
+      '📤 Upload queued. Pending: ${_firestoreService.pendingOperationsCount}',
+    ); // ✅ Add debug print
 
     _isFocusSession = !_isFocusSession;
     _remainingSeconds = _isFocusSession
@@ -112,14 +129,8 @@ class TimerProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  void _saveSession() {
-    final sessionsBox = Hive.box<Session>("sessionsBox");
-    final session = Session(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      compeletedAt: DateTime.now(),
-      durationMinutes: _isFocusSession ? focusDuration : breakDuration,
-      wasFocusSession: _isFocusSession,
-    );
-    sessionsBox.add(session);
+  Future<void> _saveSession(Session session) async {
+    await _sessionsBox.add(session);
+    print('💾 Session saved to Hive: ${session.id}');
   }
 }
