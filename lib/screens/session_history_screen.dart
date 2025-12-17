@@ -254,7 +254,7 @@ class SessionHistoryScreen extends StatelessWidget {
                 Text("${session.durationMinutes} minutes"),
                 const SizedBox(height: 2),
                 Text(
-                  "${dateFormat.format(session.compeletedAt)} at ${timeFormat.format(session.compeletedAt)}",
+                  "${dateFormat.format(session.completedAtDate)} at ${timeFormat.format(session.completedAtDate)}",
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],

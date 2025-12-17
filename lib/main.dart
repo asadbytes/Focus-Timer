@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:focus_timer/firebase_options.dart';
@@ -35,46 +34,96 @@ void main() async {
   runApp(MyApp(firestoreService: firestoreService));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final FirestoreService firestoreService;
   const MyApp({super.key, required this.firestoreService});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: firestoreService),
+        ChangeNotifierProvider.value(value: widget.firestoreService),
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(
-          create: (context) => TimerProvider(firestoreService),
+          create: (context) => TimerProvider(widget.firestoreService),
         ),
         ChangeNotifierProvider(
-          create: (context) => TaskProvider(firestoreService),
+          create: (context) => TaskProvider(widget.firestoreService),
         ),
         ChangeNotifierProvider(
-          create: (context) => StatsProvider(firestoreService),
+          create: (context) => StatsProvider(widget.firestoreService),
         ),
       ],
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
-          return MaterialApp.router(
-            title: 'Focus Timer',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.deepPurple,
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.deepPurple,
-                brightness: Brightness.dark,
-              ).copyWith(surface: Colors.black),
-            ),
-            themeMode: ThemeMode.system,
-            routerConfig: AppRouter.createRouter(authProvider),
+      child: Builder(
+        builder: (context) {
+          // ✅ Set callback once using addPostFrameCallback
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final authProvider = Provider.of<AuthProvider>(
+              context,
+              listen: false,
+            );
+
+            // ✅ Only set if not already set
+            if (authProvider.onLoginSuccess == null) {
+              authProvider.onLoginSuccess = () async {
+                final statsProvider = Provider.of<StatsProvider>(
+                  context,
+                  listen: false,
+                );
+                final taskProvider = Provider.of<TaskProvider>(
+                  context,
+                  listen: false,
+                );
+                final timerProvider = Provider.of<TimerProvider>(
+                  context,
+                  listen: false,
+                );
+
+                print('🔄 Fetching user data after login...');
+
+                await widget.firestoreService.fetchAllUserData(
+                  onSessionsFetched: (sessions) async {
+                    await statsProvider.loadSessionsFromCloud(sessions);
+                  },
+                  onTasksFetched: (tasks) async {
+                    await taskProvider.loadTasksFromCloud(tasks);
+                  },
+                  onSettingsFetched: (settings) async {
+                    await timerProvider.loadSettingsFromCloud(settings);
+                  },
+                );
+
+                print('✅ User data fetch complete');
+              };
+            }
+          });
+
+          return Consumer<AuthProvider>(
+            builder: (context, authProvider, _) {
+              return MaterialApp.router(
+                title: 'Focus Timer',
+                theme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: Colors.deepPurple,
+                    brightness: Brightness.light,
+                  ),
+                  useMaterial3: true,
+                ),
+                darkTheme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: Colors.deepPurple,
+                    brightness: Brightness.dark,
+                  ).copyWith(surface: Colors.black),
+                ),
+                themeMode: ThemeMode.system,
+                routerConfig: AppRouter.createRouter(authProvider),
+              );
+            },
           );
         },
       ),

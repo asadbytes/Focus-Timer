@@ -14,7 +14,7 @@ class TaskProvider extends ChangeNotifier {
   List<Task> get completedTasks => tasks.where((t) => t.isCompleted).toList();
 
   void addTask(String title) {
-    final task = Task(
+    final task = Task.fromDateTime(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
       createdAt: DateTime.now(),
@@ -39,5 +39,13 @@ class TaskProvider extends ChangeNotifier {
     _taskBox.delete(id);
     notifyListeners();
     _firestoreService.deleteTask(id);
+  }
+
+  Future<void> loadTasksFromCloud(List<Task> cloudTasks) async {
+    for (final task in cloudTasks) {
+      await _taskBox.put(task.id, task);
+    }
+    notifyListeners();
+    print('✅ Loaded ${cloudTasks.length} tasks from cloud');
   }
 }

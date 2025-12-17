@@ -31,9 +31,9 @@ class StatsProvider extends ChangeNotifier {
 
     return allSessions.where((session) {
       final sessionDate = DateTime(
-        session.compeletedAt.year,
-        session.compeletedAt.month,
-        session.compeletedAt.day,
+        session.completedAtDate.year,
+        session.completedAtDate.month,
+        session.completedAtDate.day,
       );
       return sessionDate == today && session.wasFocusSession;
     }).toList();
@@ -49,7 +49,7 @@ class StatsProvider extends ChangeNotifier {
     );
 
     return allSessions.where((session) {
-      return session.compeletedAt.isAfter(weekStartDate) &&
+      return session.completedAtDate.isAfter(weekStartDate) &&
           session.wasFocusSession;
     }).toList();
   }
@@ -98,9 +98,9 @@ class StatsProvider extends ChangeNotifier {
       if (!session.wasFocusSession) continue;
 
       final sessionDate = DateTime(
-        session.compeletedAt.year,
-        session.compeletedAt.month,
-        session.compeletedAt.day,
+        session.completedAtDate.year,
+        session.completedAtDate.month,
+        session.completedAtDate.day,
       );
 
       if (data.containsKey(sessionDate)) {
@@ -133,7 +133,7 @@ class StatsProvider extends ChangeNotifier {
     final idsToDelete = <String>[];
     for (var i = 0; i < sessionsBox.length; i++) {
       final session = sessionsBox.getAt(i);
-      if (session != null && session.compeletedAt.isBefore(cutoffDate)) {
+      if (session != null && session.completedAtDate.isBefore(cutoffDate)) {
         keysToDelete.add(session.key);
         idsToDelete.add(session.id);
       }
@@ -144,5 +144,13 @@ class StatsProvider extends ChangeNotifier {
     }
     notifyListeners();
     _firestoreService.deleteBulkSessions(idsToDelete);
+  }
+
+  Future<void> loadSessionsFromCloud(List<Session> cloudSessions) async {
+    for (final session in cloudSessions) {
+      await _sessionsBox.put(session.id, session);
+    }
+    notifyListeners();
+    print('✅ Loaded ${cloudSessions.length} sessions from cloud');
   }
 }

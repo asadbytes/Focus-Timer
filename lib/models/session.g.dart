@@ -18,7 +18,7 @@ class SessionAdapter extends TypeAdapter<Session> {
     };
     return Session(
       id: fields[0] as String,
-      compeletedAt: fields[1] as DateTime,
+      compeletedAt: fields[1] as int,
       durationMinutes: fields[2] as int,
       wasFocusSession: fields[3] as bool,
     );

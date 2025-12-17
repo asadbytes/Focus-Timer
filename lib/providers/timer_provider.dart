@@ -82,6 +82,10 @@ class TimerProvider extends ChangeNotifier {
     _timerBox.put("focusDuration", focus);
     _timerBox.put("breakDuration", breakTime);
     resetTimer();
+    _firestoreService.syncSettings(
+      focusDuration: _focusDuration,
+      breakDuration: _breakDuration,
+    );
   }
 
   // ✅ To:
@@ -93,15 +97,14 @@ class TimerProvider extends ChangeNotifier {
     _timer?.cancel();
     _isRunning = false;
 
-    final session = Session(
-      id: DateTime.now().millisecondsSinceEpoch
-          .toString(), // ✅ Changed from microseconds
-      compeletedAt: DateTime.now(),
+    final session = Session.fromDateTime(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      completedAt: DateTime.now(),
       durationMinutes: _isFocusSession ? focusDuration : breakDuration,
       wasFocusSession: _isFocusSession,
     );
 
-    await _saveSession(session); // ✅ Add await
+    await _saveSessionLocally(session); // ✅ Add await
     await _firestoreService.uploadSession(session); // ✅ Add await
     print(
       '📤 Upload queued. Pending: ${_firestoreService.pendingOperationsCount}',
@@ -129,8 +132,25 @@ class TimerProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> _saveSession(Session session) async {
+  Future<void> _saveSessionLocally(Session session) async {
     await _sessionsBox.add(session);
     print('💾 Session saved to Hive: ${session.id}');
+  }
+
+  Future<void> loadSettingsFromCloud(
+    Map<String, dynamic>? cloudSettings,
+  ) async {
+    if (cloudSettings == null) return;
+
+    _focusDuration = cloudSettings['focusDuration'] as int? ?? 25;
+    _breakDuration = cloudSettings['breakDuration'] as int? ?? 5;
+    _timerBox.put("focusDuration", _focusDuration);
+    _timerBox.put("breakDuration", _breakDuration);
+    resetTimer();
+    notifyListeners();
+
+    print(
+      '✅ Settings loaded from cloud: Focus=${_focusDuration}min, Break=${_breakDuration}min',
+    );
   }
 }

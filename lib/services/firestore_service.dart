@@ -219,12 +219,7 @@ class FirestoreService extends ChangeNotifier {
 
   Future<void> uploadSession(Session session) async {
     print('📤 Queueing session upload: ${session.id}');
-    await _queueOperation('upload_session', {
-      'id': session.id,
-      'completedAt': session.compeletedAt.toIso8601String(),
-      'durationMinutes': session.durationMinutes,
-      'wasFocusSession': session.wasFocusSession,
-    });
+    await _queueOperation('upload_session', session.toFirestore());
   }
 
   Future<void> deleteSession(String sessionId) async {
@@ -237,12 +232,7 @@ class FirestoreService extends ChangeNotifier {
 
   Future<void> uploadTask(Task task) async {
     print('📤 Queueing task upload: ${task.id}');
-    await _queueOperation('upload_task', {
-      'id': task.id,
-      'title': task.title,
-      'isCompleted': task.isCompleted,
-      'createdAt': task.createdAt.toIso8601String(),
-    });
+    await _queueOperation('upload_task', task.toFirestore());
   }
 
   Future<void> deleteTask(String taskId) async {
@@ -250,11 +240,7 @@ class FirestoreService extends ChangeNotifier {
   }
 
   Future<void> updateTask(Task task) async {
-    await _queueOperation('update_task', {
-      'id': task.id,
-      'title': task.title,
-      'isCompleted': task.isCompleted,
-    });
+    await _queueOperation('update_task', task.toFirestore());
   }
 
   // ==================== PULL FROM CLOUD ====================
@@ -268,12 +254,7 @@ class FirestoreService extends ChangeNotifier {
           .timeout(const Duration(seconds: 10));
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        return Session(
-          id: doc.id,
-          compeletedAt: DateTime.parse(data['completedAt']),
-          durationMinutes: data['durationMinutes'],
-          wasFocusSession: data['wasFocusSession'],
-        );
+        return Session.fromFirestore(data);
       }).toList();
     } catch (e) {
       print('❌ Error fetching sessions: $e');
@@ -290,12 +271,7 @@ class FirestoreService extends ChangeNotifier {
           .timeout(const Duration(seconds: 10));
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        return Task(
-          id: doc.id,
-          title: data['title'],
-          isCompleted: data['isCompleted'],
-          createdAt: DateTime.parse(data['createdAt']),
-        );
+        return Task.fromFirestore(data);
       }).toList();
     } catch (e) {
       print('❌ Error fetching tasks: $e');
@@ -311,6 +287,104 @@ class FirestoreService extends ChangeNotifier {
     print('   └─ Already syncing: ${_isSyncing ? "Yes" : "No"}');
 
     await _processSyncQueue();
+  }
+
+  // Settings sync methods
+  Future<void> syncSettings({
+    required int focusDuration,
+    required int breakDuration,
+  }) async {
+    if (_auth.currentUser == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('settings')
+          .doc('preferences')
+          .set({
+            'focusDuration': focusDuration,
+            'breakDuration': breakDuration,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+      print('✅ Settings synced to cloud');
+    } catch (e) {
+      print('❌ Settings sync failed: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchSettings() async {
+    if (_auth.currentUser == null) return null;
+
+    try {
+      final doc = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('settings')
+          .doc('preferences')
+          .get();
+
+      if (doc.exists) {
+        print('✅ Settings fetched from cloud');
+        return doc.data();
+      }
+      return null;
+    } catch (e) {
+      print('❌ Settings fetch failed: $e');
+      return null;
+    }
+  }
+
+  // Fetch all user data on login
+  Future<void> fetchAllUserData({
+    required Function(List<Session>) onSessionsFetched,
+    required Function(List<Task>) onTasksFetched,
+    required Function(Map<String, dynamic>?) onSettingsFetched,
+  }) async {
+    if (_auth.currentUser == null) return;
+
+    print('🔄 Fetching all user data from cloud...');
+
+    try {
+      // Fetch sessions
+      final sessionsSnapshot = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('sessions')
+          .orderBy('completedAt', descending: true)
+          .get();
+
+      final sessions = sessionsSnapshot.docs
+          .map((doc) => Session.fromFirestore(doc.data()))
+          .toList();
+
+      onSessionsFetched(sessions);
+      print('✅ Fetched ${sessions.length} sessions');
+
+      // Fetch tasks
+      final tasksSnapshot = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('tasks')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final tasks = tasksSnapshot.docs
+          .map((doc) => Task.fromFirestore(doc.data()))
+          .toList();
+
+      onTasksFetched(tasks);
+      print('✅ Fetched ${tasks.length} tasks');
+
+      // Fetch settings
+      final settings = await fetchSettings();
+      onSettingsFetched(settings);
+
+      print('✅ All user data fetched successfully');
+    } catch (e) {
+      print('❌ Failed to fetch user data: $e');
+    }
   }
 }
 

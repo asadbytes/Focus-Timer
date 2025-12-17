@@ -7,7 +7,7 @@ class Session extends HiveObject {
   @HiveField(0)
   final String id;
   @HiveField(1)
-  final DateTime compeletedAt;
+  final int compeletedAt;
   @HiveField(2)
   final int durationMinutes;
   @HiveField(3)
@@ -19,4 +19,42 @@ class Session extends HiveObject {
     required this.durationMinutes,
     required this.wasFocusSession,
   });
+
+  // ✅ Helper to convert to DateTime when needed
+  DateTime get completedAtDate =>
+      DateTime.fromMillisecondsSinceEpoch(compeletedAt);
+
+  // ✅ Factory for creating from DateTime
+  factory Session.fromDateTime({
+    required String id,
+    required DateTime completedAt,
+    required int durationMinutes,
+    required bool wasFocusSession,
+  }) {
+    return Session(
+      id: id,
+      compeletedAt: completedAt.millisecondsSinceEpoch,
+      durationMinutes: durationMinutes,
+      wasFocusSession: wasFocusSession,
+    );
+  }
+
+  // ✅ Firestore conversion methods
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'completedAt': compeletedAt,
+      'durationMinutes': durationMinutes,
+      'wasFocusSession': wasFocusSession,
+    };
+  }
+
+  factory Session.fromFirestore(Map<String, dynamic> data) {
+    return Session(
+      id: data['id'] as String,
+      compeletedAt: data['completedAt'] as int,
+      durationMinutes: data['durationMinutes'] as int,
+      wasFocusSession: data['wasFocusSession'] as bool,
+    );
+  }
 }
